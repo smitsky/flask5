@@ -9,26 +9,30 @@ venv/
 env/
 .venv/
 
+# Instance folder (local configs / sqlite DB)
+instance/
+# You can be more specific:
+# instance/users.sqlite3
+
 # SQLite DB
-users.sqlite3
 *.db
 *.sqlite3
 
 # VS Code
 .vscode/
 
-# Pytest, coverage
+# Pytest/coverage
 .coverage
 htmlcov/
 
-# Byte-compiled / logs
+# Logs
 *.log
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Python packaging
+# Packaging
 *.egg-info/
 dist/
 build/
