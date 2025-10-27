@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# SQLite DB
+users.sqlite3
+*.db
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# Pytest, coverage
+.coverage
+htmlcov/
+
+# Byte-compiled / logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python packaging
+*.egg-info/
+dist/
+build/
