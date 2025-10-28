@@ -1,4 +1,4 @@
-# Full app.py (WTForms + CSRF integrated, minimal and ready)
+# Full app.py (WTForms + CSRF integrated, minimal and ready) — upgraded to lazily bump PBKDF2 iterations
 from flask import Flask, render_template, redirect, url_for, request, flash
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
@@ -19,6 +19,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=5)
 
+# PBKDF2 target iterations (configurable via env)
+# Example: export PBKDF2_ITERATIONS=300000
+app.config['PBKDF2_ITERATIONS'] = int(os.getenv('PBKDF2_ITERATIONS', '200000'))
+# Hash algorithm used by werkzeug generate_password_hash (we use pbkdf2:sha256)
+app.config['PBKDF2_ALGORITHM'] = 'pbkdf2:sha256'
+
 db = SQLAlchemy(app)
 
 # Login manager
@@ -33,13 +39,41 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    def set_password(self, password, iterations=None):
+        """
+        Create and store a password hash using the configured PBKDF2 algorithm + iterations.
+        By default, uses app.config['PBKDF2_ITERATIONS'].
+        """
+        if iterations is None:
+            iterations = app.config.get('PBKDF2_ITERATIONS', 200000)
+        method = f"{app.config.get('PBKDF2_ALGORITHM', 'pbkdf2:sha256')}:{iterations}"
+        # werkzeug's generate_password_hash stores method and salt in the returned string
+        self.password_hash = generate_password_hash(password, method=method)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def needs_rehash(self, target_iterations=None):
+        """
+        Parse stored hash method to determine iteration count and return True if
+        stored iterations < target_iterations.
+        """
+        if target_iterations is None:
+            target_iterations = app.config.get('PBKDF2_ITERATIONS', 200000)
+        # Stored werkzeug hash looks like: "pbkdf2:sha256:260000$<salt>$<hash>"
+        try:
+            method_part = self.password_hash.split('$', 1)[0]  # "pbkdf2:sha256:260000"
+            parts = method_part.split(':')  # ["pbkdf2", "sha256", "260000"]
+            if len(parts) >= 3:
+                stored_iters = int(parts[2])
+            else:
+                # No explicit iterations encoded — treat as very old/small value
+                stored_iters = 0
+        except Exception:
+            stored_iters = 0
+        return stored_iters < int(target_iterations)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -72,6 +106,7 @@ def register():
             return render_template('register.html', form=form)
 
         u = User(username=username, email=email)
+        # set_password uses the configured PBKDF2 iterations
         u.set_password(password)
         db.session.add(u)
         db.session.commit()
@@ -102,6 +137,19 @@ def login():
         if user and user.check_password(password):
             login_user(user, remember=remember)
             flash("Logged in.")
+
+            # Lazy upgrade: if stored hash uses fewer iterations than our target,
+            # re-hash now (we have plaintext password).
+            try:
+                if user.needs_rehash():
+                    user.set_password(password)  # uses app.config['PBKDF2_ITERATIONS']
+                    db.session.add(user)
+                    db.session.commit()
+                    # Optionally log/metric that a rehash occurred
+                    app.logger.info(f"Upgraded password hash iterations for user_id={user.id}")
+            except Exception as e:
+                app.logger.exception("Failed to upgrade password hash (non-fatal)")
+
             if next_page and is_safe_url(next_page):
                 return redirect(next_page)
             return redirect(url_for('home'))
