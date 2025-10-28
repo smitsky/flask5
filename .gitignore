@@ -36,3 +36,9 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+
+# .gitignore
+.env
+instance/users.sqlite3
+__pycache__/
+*.pyc

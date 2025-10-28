@@ -9,8 +9,12 @@ from urllib.parse import urlparse, urljoin
 from flask_wtf import CSRFProtect
 from forms import LoginForm, RegisterForm
 
+from dotenv import load_dotenv
+load_dotenv()  # ← This loads .env into os.environ
+
 app = Flask(__name__)
-app.secret_key = "wxyz"  # for development only; use env var in prod
+import os
+app.secret_key = os.getenv('FLASK_SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=5)
