@@ -42,3 +42,4 @@ build/
 instance/users.sqlite3
 __pycache__/
 *.pyc
+run.bat
