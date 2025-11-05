@@ -5,3 +5,50 @@ body {
 img {
   border-radius: 6px;
 }
+
+/* 1. Target the Specific Card on the Login Page */
+#login-card {
+    /* Set a maximum size for the card */
+    max-width: 450px; 
+    
+    /* Center the card horizontally on the page */
+    margin: 50px auto 0 auto; 
+    
+    /* Add some internal padding and a soft border */
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* 2. Style the Login Form Title */
+.card-title {
+    color: #007bff; /* Use Bootstrap's primary blue for the title */
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 3. Give the Submit Button a custom look */
+.btn-primary {
+    /* Override Bootstrap primary blue with a custom purple */
+    background-color: #5a008a; 
+    border-color: #5a008a;
+    transition: background-color 0.3s ease; /* Add a smooth transition for hover effect */
+}
+
+/* 4. Add a Hover Effect for the Custom Button */
+.btn-primary:hover {
+    background-color: #7b2c9a; /* Lighter purple on hover */
+    border-color: #7b2c9a;
+}
+
+body {
+    /* Define a linear gradient from top-left to bottom-right */
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    
+    /* Ensure the background covers the entire viewport */
+    min-height: 100vh; 
+    
+    /* Optional: Hide scrollbar if content is short */
+    overflow-y: auto;
+    
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
