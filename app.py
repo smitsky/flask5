@@ -51,6 +51,20 @@ app.config['PBKDF2_ALGORITHM'] = 'pbkdf2:sha256'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# app.py (Temporary addition)
+# ***************************************************************
+# *** CRITICAL TEMPORARY FIX: CREATE TABLES ON DEPLOY (STEP 1) ***
+# *** YOU MUST REMOVE THIS BLOCK AFTER SUCCESSFUL DEPLOYMENT ***
+# ***************************************************************
+if DATABASE_URL:
+    print("ATTEMPTING TO RUN db.create_all() TO CREATE MISSING TABLES...")
+    with app.app_context():
+        # This function safely creates tables only if they don't already exist.
+        db.create_all()
+        print("TABLES CHECKED/CREATED. REMEMBER TO REMOVE THIS TEMPORARY BLOCK.")
+# ***************************************************************
+# ***************************************************************
+
 # Login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
