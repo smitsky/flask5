@@ -2,20 +2,23 @@
 from flask import Flask, render_template, redirect, url_for, request, flash
 from datetime import timedelta
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse, urljoin
+import os
 
 from flask_wtf import CSRFProtect
 from forms import LoginForm, RegisterForm
 
 from dotenv import load_dotenv
-load_dotenv()  # ← This loads .env into os.environ
+# In production (Render), this is ignored or benign.
+# We keep it for local development environments.
+load_dotenv() 
 
 app = Flask(__name__)
-import os
-from datetime import timedelta
-# ... other imports (e.g., Flask, SQLAlchemy)
+# NOTE: Moving db and migrate initialization below config setup is often safer.
+# We will execute the config setup first.
 
 # --- Environment Variable Setup for Render and Local ---
 
@@ -30,13 +33,8 @@ if DATABASE_URL:
     # Render's URL starts with 'postgres://'. SQLAlchemy recommends 'postgresql://' for the driver.
     # We use .replace to ensure compatibility with modern psycopg2/SQLAlchemy.
     app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    
-    # Optional: If you use the free tier, you might need to enable SSL.
-    # app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'sslmode': 'require'}}
-    
 else:
     # --- Local Configuration (SQLite) ---
-    # If the DATABASE_URL environment variable is NOT set, use the local SQLite file.
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 
 # --- Common Configurations ---
@@ -48,7 +46,26 @@ app.config['PBKDF2_ITERATIONS'] = int(os.getenv('PBKDF2_ITERATIONS', '200000'))
 # Hash algorithm used by werkzeug generate_password_hash (we use pbkdf2:sha256)
 app.config['PBKDF2_ALGORITHM'] = 'pbkdf2:sha256'
 
+
+# --- DB Initialization after Config is Set ---
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+
+# ***************************************************************
+# *** CRITICAL TEMPORARY FIX: CREATE TABLES ON DEPLOY (STEP 1) ***
+# *** YOU MUST REMOVE THIS BLOCK AFTER SUCCESSFUL DEPLOYMENT ***
+# ***************************************************************
+if DATABASE_URL:
+    print("ATTEMPTING TO RUN db.create_all() TO CREATE MISSING TABLES...")
+    with app.app_context():
+        # This function safely creates tables only if they don't already exist.
+        # It requires the models (User class) to be defined above or imported.
+        db.create_all()
+        print("TABLES CHECKED/CREATED. REMEMBER TO REMOVE THIS TEMPORARY BLOCK.")
+# ***************************************************************
+# ***************************************************************
+
 
 # Login manager
 login_manager = LoginManager()
