@@ -58,6 +58,7 @@ login_manager.login_view = 'login'
 csrf = CSRFProtect(app)
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'users' # <--- THIS LINE IS CRITICAL
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
