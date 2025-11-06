@@ -46,25 +46,6 @@ app.config['PBKDF2_ITERATIONS'] = int(os.getenv('PBKDF2_ITERATIONS', '200000'))
 # Hash algorithm used by werkzeug generate_password_hash (we use pbkdf2:sha256)
 app.config['PBKDF2_ALGORITHM'] = 'pbkdf2:sha256'
 
-
-# --- DB Initialization after Config is Set ---
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-# app.py (Temporary addition)
-# ***************************************************************
-# *** CRITICAL TEMPORARY FIX: CREATE TABLES ON DEPLOY (STEP 1) ***
-# *** YOU MUST REMOVE THIS BLOCK AFTER SUCCESSFUL DEPLOYMENT ***
-# ***************************************************************
-if DATABASE_URL:
-    print("ATTEMPTING TO RUN db.create_all() TO CREATE MISSING TABLES...")
-    with app.app_context():
-        # This function safely creates tables only if they don't already exist.
-        db.create_all()
-        print("TABLES CHECKED/CREATED. REMEMBER TO REMOVE THIS TEMPORARY BLOCK.")
-# ***************************************************************
-# ***************************************************************
-
 # Login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -212,6 +193,14 @@ def protected():
 @app.cli.command('init-db')
 def init_db():
     print("Database initialized.")
+
+# In app.py, add this to ensure table creation can be run via CLI
+@app.cli.command('create-db')
+def create_db_tables():
+    """Creates database tables defined in models."""
+    with app.app_context():
+        db.create_all()
+    print("Database tables created successfully.")
 
 if __name__ == '__main__':
     app.run(debug=True)
