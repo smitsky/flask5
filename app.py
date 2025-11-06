@@ -213,7 +213,6 @@ def protected():
 
 @app.cli.command('init-db')
 def init_db():
-    db.create_all()
     print("Database initialized.")
 
 if __name__ == '__main__':
