@@ -192,15 +192,7 @@ def create_db_tables():
     """Creates database tables defined in models."""
     with app.app_context():
         db.create_all()
-    print("Database tables created successfully.")
-
-# CLI command to drop ALL tables (for a clean reset)
-@app.cli.command('drop-db')
-def drop_db_tables():
-    """Drops all database tables. USE WITH CAUTION."""
-    with app.app_context():
-        db.drop_all()
-    print("Database tables DROPPED.")
+    print("Database tables created successfully Smitty.")
 
 if __name__ == '__main__':
     app.run(debug=True)
