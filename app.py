@@ -41,6 +41,9 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=5)
 
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 # PBKDF2 target iterations (configurable via env)
 app.config['PBKDF2_ITERATIONS'] = int(os.getenv('PBKDF2_ITERATIONS', '200000'))
 # Hash algorithm used by werkzeug generate_password_hash (we use pbkdf2:sha256)
