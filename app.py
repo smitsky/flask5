@@ -14,13 +14,36 @@ load_dotenv()  # ← This loads .env into os.environ
 
 app = Flask(__name__)
 import os
+from datetime import timedelta
+# ... other imports (e.g., Flask, SQLAlchemy)
+
+# --- Environment Variable Setup for Render and Local ---
+
+# 1. Get the Secret Key (Required for both local and Render)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
+
+# 2. Dynamic Database URI Configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # --- Production Configuration (Render/PostgreSQL) ---
+    # Render's URL starts with 'postgres://'. SQLAlchemy recommends 'postgresql://' for the driver.
+    # We use .replace to ensure compatibility with modern psycopg2/SQLAlchemy.
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    # Optional: If you use the free tier, you might need to enable SSL.
+    # app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'sslmode': 'require'}}
+    
+else:
+    # --- Local Configuration (SQLite) ---
+    # If the DATABASE_URL environment variable is NOT set, use the local SQLite file.
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
+
+# --- Common Configurations ---
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=5)
 
 # PBKDF2 target iterations (configurable via env)
-# Example: export PBKDF2_ITERATIONS=300000
 app.config['PBKDF2_ITERATIONS'] = int(os.getenv('PBKDF2_ITERATIONS', '200000'))
 # Hash algorithm used by werkzeug generate_password_hash (we use pbkdf2:sha256)
 app.config['PBKDF2_ALGORITHM'] = 'pbkdf2:sha256'
